@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { supabase } from '../../lib/supabase';
-import Link from 'next/link';
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import Link from "next/link";
 
 interface ChatUser {
   id: string;
@@ -25,13 +25,16 @@ export default function Contacts() {
   useEffect(() => {
     const fetchChats = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         if (!user) return;
 
         // Fetch all connections and their associated chats
         const { data: connections, error: connectionsError } = await supabase
-          .from('connections')
-          .select(`
+          .from("connections")
+          .select(
+            `
             id,
             user1_id,
             user2_id,
@@ -50,28 +53,31 @@ export default function Contacts() {
               first_name,
               last_name
             )
-          `)
+          `
+          )
           .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`);
 
         if (connectionsError) throw connectionsError;
 
         // Transform the data to get a flat list of chats with user info
-        const formattedChats = connections?.map(conn => {
-          const otherUser = conn.user1_id === user.id ? conn.user2 : conn.user1;
-          const chat = conn.chats[0]; // We know there's only one chat per connection
-          
-          return {
-            id: chat.id,
-            connection_id: conn.id,
-            last_message: chat.last_message,
-            last_message_at: chat.last_message_at,
-            user: otherUser
-          };
-        }) || [];
+        const formattedChats =
+          connections?.map((conn) => {
+            const otherUser =
+              conn.user1_id === user.id ? conn.user2 : conn.user1;
+            const chat = conn.chats[0]; // We know there's only one chat per connection
+
+            return {
+              id: chat.id,
+              connection_id: conn.id,
+              last_message: chat.last_message,
+              last_message_at: chat.last_message_at,
+              user: otherUser,
+            };
+          }) || [];
 
         setChats(formattedChats);
       } catch (error) {
-        console.error('Error fetching chats:', error);
+        console.error("Error fetching chats:", error);
       } finally {
         setLoading(false);
       }
@@ -94,7 +100,7 @@ export default function Contacts() {
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-lg mx-auto">
         <h1 className="text-2xl font-bold text-gray-900 mb-6">Contacts</h1>
-        
+
         <div className="space-y-2">
           {chats.length === 0 ? (
             <p className="text-center text-gray-500 py-4">

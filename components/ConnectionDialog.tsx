@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 interface ConnectionDialogProps {
   requestId: string;
@@ -7,22 +7,26 @@ interface ConnectionDialogProps {
   onClose: () => void;
 }
 
-export function ConnectionDialog({ requestId, fromUserId, onClose }: ConnectionDialogProps) {
+export function ConnectionDialog({
+  requestId,
+  fromUserId,
+  onClose,
+}: ConnectionDialogProps) {
   const [loading, setLoading] = useState(false);
 
   const handleResponse = async (accept: boolean) => {
     try {
       setLoading(true);
       const { error } = await supabase
-        .from('connection_requests')
-        .update({ status: accept ? 'accepted' : 'rejected' })
-        .eq('id', requestId);
+        .from("connection_requests")
+        .update({ status: accept ? "accepted" : "rejected" })
+        .eq("id", requestId);
 
       if (error) throw error;
       onClose();
     } catch (error) {
-      console.error('Error updating connection request:', error);
-      alert('Error updating connection request');
+      console.error("Error updating connection request:", error);
+      alert("Error updating connection request");
     } finally {
       setLoading(false);
     }
