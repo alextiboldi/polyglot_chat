@@ -127,7 +127,7 @@ export default function Login() {
             <div className="relative">
               <div className="relative flex justify-center text-sm">
                 <span className="px-2 text-gray-500">
-                  Don't have an account yet?{" "}
+                  Don&apos;t have an account yet?{" "}
                   <Link
                     href="/signup"
                     className="font-medium text-blue-600 hover:text-blue-500"
