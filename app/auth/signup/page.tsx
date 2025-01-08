@@ -2,11 +2,14 @@
 
 import { useState } from "react";
 import * as Label from "@radix-ui/react-label";
-import * as Select from "@radix-ui/react-select";
-import { LanguageSelect } from "@/app/components/LanguageSelect";
+import { LanguageSelect } from "@/components/LanguageSelect";
 import { signUpSchema } from "@/lib/zod-schema";
+import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function SignUp() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     email: "",
     firstName: "",
@@ -16,6 +19,7 @@ export default function SignUp() {
     language: "en",
   });
 
+  const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -28,14 +32,48 @@ export default function SignUp() {
         return;
       }
 
-      // Handle signup logic here
-      console.log("Form submitted:", validatedData);
-    } catch (error: any) {
-      const formattedErrors: Record<string, string> = {};
-      error.errors.forEach((err: any) => {
-        formattedErrors[err.path[0]] = err.message;
+      setLoading(true);
+
+      // Sign up with Supabase
+      const { data, error: authError } = await supabase.auth.signUp({
+        email: validatedData.email,
+        password: validatedData.password,
+        options: {
+          data: {
+            email: validatedData.email, // This will be used by the trigger
+          },
+        },
       });
-      setErrors(formattedErrors);
+
+      if (authError) {
+        console.error("Supabase auth error:", authError);
+        throw authError;
+      }
+
+      if (data.user) {
+        // Update the profile with additional information
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .update({
+            first_name: validatedData.firstName,
+            last_name: validatedData.lastName,
+            language: validatedData.language,
+          })
+          .eq("id", data.user.id);
+
+        if (profileError) {
+          console.error("Profile update error:", profileError);
+          throw profileError;
+        }
+
+        // Redirect to main page after successful signup
+        router.push("/main");
+      }
+    } catch (error: any) {
+      console.error("Signup error:", error);
+      setErrors({ submit: error.message || "An error occurred during signup" });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -51,6 +89,9 @@ export default function SignUp() {
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <Link href="/" className="text-blue-600 hover:text-blue-500">
+            Polyglot Chat
+          </Link>
           Create your account
         </h2>
       </div>
@@ -181,11 +222,28 @@ export default function SignUp() {
 
             <div>
               <button
+                disabled={loading}
                 type="submit"
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
-                Sign up
+                {loading ? "Creating account..." : "Sign up"}
               </button>
+            </div>
+
+            {errors.submit && (
+              <div className="mt-4 text-red-600 text-sm text-center">
+                {errors.submit}
+              </div>
+            )}
+
+            <div className="mt-6 text-center text-sm text-gray-500">
+              Already have an account?{" "}
+              <Link
+                href="/auth/login"
+                className="text-blue-600 hover:text-blue-500"
+              >
+                Sign in
+              </Link>
             </div>
           </form>
         </div>

@@ -114,7 +114,7 @@ export default function Login() {
                 <span className="px-2 text-gray-500">
                   Don't have an account yet?{" "}
                   <Link
-                    href="/signup"
+                    href="/auth/signup"
                     className="font-medium text-blue-600 hover:text-blue-500"
                   >
                     Sign up
