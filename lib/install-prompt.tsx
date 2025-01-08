@@ -39,12 +39,3 @@ export function InstallPrompt() {
     </div>
   );
 }
-
-export default function Page() {
-  return (
-    <div>
-      <PushNotificationManager />
-      <InstallPrompt />
-    </div>
-  );
-}

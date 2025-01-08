@@ -3,26 +3,25 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-
-interface ConnectPageProps {
-  params: {
-    token: string;
-  };
-}
+import { use } from "react";
 
 interface TokenUser {
   first_name: string;
   last_name: string;
 }
 
-export default function ConnectPage({ params }: ConnectPageProps) {
+export default function ConnectPage({
+  params,
+}: {
+  params: Promise<{ token: string }>;
+}) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tokenUser, setTokenUser] = useState<TokenUser | null>(null);
-
+  const { token } = use(params);
   useEffect(() => {
-    const validateToken = async () => {
+    async function validateToken() {
       try {
         // Get the token user
         const { data: tokenData, error: tokenError } = await supabase
@@ -37,7 +36,7 @@ export default function ConnectPage({ params }: ConnectPageProps) {
             )
           `
           )
-          .eq("token", params.token)
+          .eq("token", token)
           .single();
 
         if (tokenError || !tokenData) {
@@ -45,8 +44,8 @@ export default function ConnectPage({ params }: ConnectPageProps) {
         }
 
         setTokenUser({
-          first_name: tokenData.profiles.first_name,
-          last_name: tokenData.profiles.last_name,
+          first_name: tokenData.profiles[0].first_name,
+          last_name: tokenData.profiles[0].last_name,
         });
 
         // Create connection request
@@ -55,8 +54,7 @@ export default function ConnectPage({ params }: ConnectPageProps) {
         } = await supabase.auth.getUser();
         if (!user) {
           router.push(
-            "/auth/login?redirect=" +
-              encodeURIComponent("/connect/" + params.token)
+            "/auth/login?redirect=" + encodeURIComponent("/connect/" + token)
           );
           return;
         }
@@ -81,7 +79,7 @@ export default function ConnectPage({ params }: ConnectPageProps) {
           const { data: chat, error: chatError } = await supabase
             .from("chats")
             .select("id")
-            .eq("connection_id", connection.id)
+            .eq("connection_id", (connection as { id: string }).id)
             .single();
 
           if (chatError) throw chatError;
@@ -94,10 +92,10 @@ export default function ConnectPage({ params }: ConnectPageProps) {
       } finally {
         setLoading(false);
       }
-    };
+    }
 
-    validateToken();
-  }, [params.token, router]);
+    validateToken().catch(console.error);
+  }, [token, router]);
 
   if (loading) {
     return (

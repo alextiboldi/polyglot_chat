@@ -248,3 +248,92 @@ ADD CONSTRAINT fk_user2_id_profiles
 FOREIGN KEY (user2_id)
 REFERENCES profiles (id)
 ON DELETE CASCADE;
+
+
+/*
+  # Add connection tokens table
+
+  1. New Tables
+    - `connection_tokens`
+      - `id` (uuid, primary key)
+      - `user_id` (uuid) - The user who created the token
+      - `token` (text) - Unique token for the connection link
+      - `expires_at` (timestamptz) - When the token expires
+      - `created_at` (timestamptz)
+
+  2. Security
+    - Enable RLS on `connection_tokens` table
+    - Add policies for token creation and reading
+*/
+
+CREATE TABLE IF NOT EXISTS connection_tokens (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+  token text UNIQUE NOT NULL DEFAULT encode(gen_random_bytes(32), 'hex'),
+  expires_at timestamptz NOT NULL DEFAULT (now() + interval '24 hours'),
+  created_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE connection_tokens ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can create their own tokens"
+  ON connection_tokens
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can read tokens"
+  ON connection_tokens
+  FOR SELECT
+  TO authenticated
+  USING (true);
+
+-- Create index for token lookups
+CREATE INDEX IF NOT EXISTS idx_connection_tokens_token ON connection_tokens(token);
+
+
+
+/*
+  # Add function to create connection from token
+
+  1. New Functions
+    - `create_connection_from_token`
+      - Creates a connection between two users
+      - Returns the created connection record
+      - Handles duplicate connections gracefully
+
+  2. Security
+    - Function runs with SECURITY DEFINER to bypass RLS
+    - Input validation ensures users exist
+*/
+
+CREATE OR REPLACE FUNCTION create_connection_from_token(
+  p_from_user_id uuid,
+  p_to_user_id uuid
+)
+RETURNS connections
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_connection connections;
+BEGIN
+  -- Check if connection already exists (in either direction)
+  SELECT * INTO v_connection
+  FROM connections
+  WHERE (user1_id = p_from_user_id AND user2_id = p_to_user_id)
+     OR (user1_id = p_to_user_id AND user2_id = p_from_user_id);
+
+  -- If connection exists, return it
+  IF FOUND THEN
+    RETURN v_connection;
+  END IF;
+
+  -- Create new connection
+  INSERT INTO connections (user1_id, user2_id)
+  VALUES (p_from_user_id, p_to_user_id)
+  RETURNING * INTO v_connection;
+
+  RETURN v_connection;
+END;
+$$;

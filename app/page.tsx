@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { InstallPWA } from "@/components/InstallPWA";
 import Link from "next/link";
 import { PushNotificationManager } from "@/lib/push-notification-manager";
-import InstallPrompt from "@/lib/install-prompt";
+import { InstallPrompt } from "@/lib/install-prompt";
 
 export default function LandingPage() {
   const router = useRouter();

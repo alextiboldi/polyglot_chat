@@ -63,7 +63,7 @@ export default function Contacts() {
         const formattedChats =
           connections?.map((conn) => {
             const otherUser =
-              conn.user1_id === user.id ? conn.user2 : conn.user1;
+              conn.user1_id === user.id ? conn.user2[0] : conn.user1[0];
             const chat = conn.chats[0]; // We know there's only one chat per connection
 
             return {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { TranslateBox } from "@/components/TranslateBox";
 
@@ -10,10 +10,14 @@ interface ChatUser {
   last_name: string;
 }
 
-export default function ChatPage({ params }: { params: { id: string } }) {
+export default function ChatPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const [otherUser, setOtherUser] = useState<ChatUser | null>(null);
   const [loading, setLoading] = useState(true);
-
+  const { id } = use(params);
   useEffect(() => {
     const fetchChatDetails = async () => {
       try {
@@ -44,15 +48,17 @@ export default function ChatPage({ params }: { params: { id: string } }) {
             )
           `
           )
-          .eq("id", params.id)
+          .eq("id", id)
           .single();
 
         if (chatError) throw chatError;
 
         // Determine which user is the other user
-        const connection = chat.connections;
+        const connection = chat.connections[0];
         const otherUser =
-          connection.user1_id === user.id ? connection.user2 : connection.user1;
+          connection.user1_id === user.id
+            ? connection.user2[0]
+            : connection.user1[0];
 
         setOtherUser(otherUser);
       } catch (error) {
@@ -63,7 +69,7 @@ export default function ChatPage({ params }: { params: { id: string } }) {
     };
 
     fetchChatDetails();
-  }, [params.id]);
+  }, [id]);
 
   if (loading) {
     return (
