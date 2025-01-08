@@ -85,7 +85,7 @@ export function InstallPWA() {
                     </span>
                   </li>
                   <li>
-                    Scroll down and tap "Add to Home Screen"{" "}
+                    Scroll down and tap &quot;Add to Home Screen&quot;
                     <span className="inline-block">
                       <svg
                         className="w-5 h-5 inline"
@@ -100,7 +100,7 @@ export function InstallPWA() {
                       </svg>
                     </span>
                   </li>
-                  <li>Tap "Add" to install</li>
+                  <li>Tap &quot;Add&quot; to install</li>
                 </ol>
               </div>
             ) : deferredPrompt ? (
@@ -115,7 +115,7 @@ export function InstallPWA() {
               </div>
             ) : (
               <p>
-                You can install this app from your browser's menu for quick
+                You can install this app from your browser&quot;s menu for quick
                 access.
               </p>
             )}
