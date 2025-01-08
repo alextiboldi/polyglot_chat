@@ -21,14 +21,29 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
-      });
+      const { data, error: authError } = await supabase.auth.signInWithPassword(
+        {
+          email: formData.email,
+          password: formData.password,
+        }
+      );
 
-      if (error) throw error;
+      if (authError) throw authError;
 
       if (data.user) {
+        // Check if email is verified
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("email_verified")
+          .eq("id", data.user.id)
+          .single();
+
+        if (profileError) throw profileError;
+
+        if (!profile.email_verified) {
+          throw new Error("Please verify your email before logging in");
+        }
+
         router.push("/"); // Redirect to home page after successful login
       }
     } catch (error: any) {
@@ -114,7 +129,7 @@ export default function Login() {
                 <span className="px-2 text-gray-500">
                   Don't have an account yet?{" "}
                   <Link
-                    href="/auth/signup"
+                    href="/signup"
                     className="font-medium text-blue-600 hover:text-blue-500"
                   >
                     Sign up

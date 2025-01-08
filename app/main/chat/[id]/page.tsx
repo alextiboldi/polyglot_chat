@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { supabase } from '../../../lib/supabase';
-import { TranslateBox } from '../../components/TranslateBox';
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { TranslateBox } from "@/components/TranslateBox";
 
 interface ChatUser {
   id: string;
@@ -17,13 +17,16 @@ export default function ChatPage({ params }: { params: { id: string } }) {
   useEffect(() => {
     const fetchChatDetails = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         if (!user) return;
 
         // Fetch chat and connection details
         const { data: chat, error: chatError } = await supabase
-          .from('chats')
-          .select(`
+          .from("chats")
+          .select(
+            `
             connection_id,
             connections (
               user1_id,
@@ -39,21 +42,21 @@ export default function ChatPage({ params }: { params: { id: string } }) {
                 last_name
               )
             )
-          `)
-          .eq('id', params.id)
+          `
+          )
+          .eq("id", params.id)
           .single();
 
         if (chatError) throw chatError;
 
         // Determine which user is the other user
         const connection = chat.connections;
-        const otherUser = connection.user1_id === user.id 
-          ? connection.user2 
-          : connection.user1;
+        const otherUser =
+          connection.user1_id === user.id ? connection.user2 : connection.user1;
 
         setOtherUser(otherUser);
       } catch (error) {
-        console.error('Error fetching chat details:', error);
+        console.error("Error fetching chat details:", error);
       } finally {
         setLoading(false);
       }

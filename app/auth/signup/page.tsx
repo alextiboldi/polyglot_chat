@@ -35,12 +35,22 @@ export default function SignUp() {
       setLoading(true);
 
       // Sign up with Supabase
-      const { data, error: authError } = await supabase.auth.signUp({
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.signUp({
         email: validatedData.email,
         password: validatedData.password,
         options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
           data: {
-            email: validatedData.email, // This will be used by the trigger
+            email: validatedData.email,
+            first_name: validatedData.firstName,
+            last_name: validatedData.lastName,
+            language: validatedData.language,
+            verification_code: Math.floor(
+              100000 + Math.random() * 900000
+            ).toString(),
           },
         },
       });
@@ -50,24 +60,11 @@ export default function SignUp() {
         throw authError;
       }
 
-      if (data.user) {
-        // Update the profile with additional information
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .update({
-            first_name: validatedData.firstName,
-            last_name: validatedData.lastName,
-            language: validatedData.language,
-          })
-          .eq("id", data.user.id);
-
-        if (profileError) {
-          console.error("Profile update error:", profileError);
-          throw profileError;
-        }
-
-        // Redirect to main page after successful signup
-        router.push("/main");
+      if (user) {
+        // Redirect to verification page
+        router.push(
+          `/auth/verify?email=${encodeURIComponent(validatedData.email)}`
+        );
       }
     } catch (error: any) {
       console.error("Signup error:", error);
